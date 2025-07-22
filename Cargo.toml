@@ -1,0 +1,14 @@
+[package]
+name = "automation-hat"
+authors = ["Judah Fuller <judah@judahfuller.com>"]
+version = "0.1.0"
+edition = "2024"
+description = "A Rust library for the Pimoroni Automation HAT"
+keywords = ["automation", "hat", "pimoroni", "raspberrypi", "automation-hat"]
+
+[dependencies]
+ads1x1x = "0.3.0"
+embedded-hal = "1.0.0"
+linux-embedded-hal = "0.4.0"
+sn3218-hal = "0.2.0"
+st7735-lcd = "0.10.0"
