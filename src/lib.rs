@@ -1,3 +1,47 @@
+//! # Automation HAT Rust Library
+//!
+//! A Rust library for controlling the [Pimoroni Automation HAT](https://shop.pimoroni.com/products/automation-hat),
+//! [Automation pHAT](https://shop.pimoroni.com/products/automation-phat), and
+//! [Automation HAT Mini](https://shop.pimoroni.com/products/automation-hat-mini).
+//!
+//! This library provides a convenient interface to control all features of the Automation HAT devices,
+//! including relays, digital outputs, digital inputs, analog inputs, and LEDs. The library also supports
+//! the display on the Automation HAT Mini.
+//!
+//! ## Features
+//!
+//! - Control relays, digital outputs, and read digital/analog inputs
+//! - Full LED control with automatic status indication
+//! - Support for all Automation HAT variants (HAT, pHAT, Mini)
+//! - Display support for Automation HAT Mini
+//!
+//! ## Example
+//!
+//! ```rust,no_run
+//! use automation_hat::{AutomationHAT, HatType};
+//!
+//! fn main() -> Result<(), Box<dyn std::error::Error>> {
+//!     // Create a new AutomationHAT instance
+//!     let mut hat = AutomationHAT::new(HatType::AutomationHAT);
+//!
+//!     // Toggle relay 3
+//!     hat.relays.three.write(true)?;
+//!
+//!     // Read digital input 1
+//!     let input_value = hat.inputs.one.read()?;
+//!     println!("Input 1: {}", input_value);
+//!
+//!     // Set digital output 2
+//!     hat.outputs.two.write(true)?;
+//!
+//!     // Read analog input 3
+//!     let analog_value = hat.analog_inputs.three.read()?;
+//!     println!("Analog 3: {}", analog_value);
+//!
+//!     Ok(())
+//! }
+//! ```
+
 mod analog_input;
 mod digital_input;
 mod digital_output;
@@ -31,70 +75,168 @@ static OUTPUT_1: u32 = 5;
 static OUTPUT_2: u32 = 12;
 static OUTPUT_3: u32 = 6;
 
+/// Represents the type of Automation HAT hardware being used.
+///
+/// Different HAT types have different capabilities:
+/// - `AutomationHAT`: Full-size HAT with 3 relays, LEDs for all I/O
+/// - `AutomationPHAT`: Smaller pHAT form factor with fewer features
+/// - `AutomationHATMini`: Mini form factor with LCD display
 pub enum HatType {
+    /// Full-sized Automation HAT with 3 relays and status LEDs for all I/O
     AutomationHAT,
+    /// Smaller pHAT form factor with fewer features than the full HAT
     AutomationPHAT,
+    /// Compact form factor with 0.96" color LCD display
     AutomationHATMini,
 }
 
+/// Container for relay controls on the Automation HAT.
+///
+/// Provides access to the relays on the Automation HAT:
+/// - `one` and `two` are optional as they're not present on all HAT variants
+/// - `three` is available on all HAT variants
 pub struct Relays {
+    /// Relay 1 - Only present on full HAT
     pub one: Option<Relay>,
+    /// Relay 2 - Only present on full HAT
     pub two: Option<Relay>,
+    /// Relay 3 - Present on all HAT variants
     pub three: Relay,
 }
 
 impl Relays {
+    /// Creates a new Relays container with the specified relay instances.
+    ///
+    /// # Arguments
+    ///
+    /// * `one` - Optional Relay 1 instance (present on HAT)
+    /// * `two` - Optional Relay 2 instance (present on HAT)
+    /// * `three` - Relay 3 instance (present on all variants)
     pub fn new(one: Option<Relay>, two: Option<Relay>, three: Relay) -> Self {
         Relays { one, two, three }
     }
 }
 
+/// Container for digital input controls on the Automation HAT.
+///
+/// Provides access to the three digital inputs available on all HAT variants.
 pub struct Inputs {
+    /// Digital Input 1
     pub one: DigitalInput,
+    /// Digital Input 2
     pub two: DigitalInput,
+    /// Digital Input 3
     pub three: DigitalInput,
 }
 
 impl Inputs {
+    /// Creates a new Inputs container with the specified digital input instances.
+    ///
+    /// # Arguments
+    ///
+    /// * `one` - Digital Input 1 instance
+    /// * `two` - Digital Input 2 instance
+    /// * `three` - Digital Input 3 instance
     pub fn new(one: DigitalInput, two: DigitalInput, three: DigitalInput) -> Self {
         Inputs { one, two, three }
     }
 }
 
+/// Container for digital output controls on the Automation HAT.
+///
+/// Provides access to the three digital outputs available on all HAT variants.
 pub struct Outputs {
+    /// Digital Output 1
     pub one: DigitalOutput,
+    /// Digital Output 2
     pub two: DigitalOutput,
+    /// Digital Output 3
     pub three: DigitalOutput,
 }
 
 impl Outputs {
+    /// Creates a new Outputs container with the specified digital output instances.
+    ///
+    /// # Arguments
+    ///
+    /// * `one` - Digital Output 1 instance
+    /// * `two` - Digital Output 2 instance
+    /// * `three` - Digital Output 3 instance
     pub fn new(one: DigitalOutput, two: DigitalOutput, three: DigitalOutput) -> Self {
         Outputs { one, two, three }
     }
 }
 
+/// Container for analog input controls on the Automation HAT.
+///
+/// Provides access to the three analog inputs available on all HAT variants.
 pub struct AnalogInputs {
+    /// Analog Input 1
     pub one: AnalogInput,
+    /// Analog Input 2
     pub two: AnalogInput,
+    /// Analog Input 3
     pub three: AnalogInput,
 }
 
 impl AnalogInputs {
+    /// Creates a new AnalogInputs container with the specified analog input instances.
+    ///
+    /// # Arguments
+    ///
+    /// * `one` - Analog Input 1 instance
+    /// * `two` - Analog Input 2 instance
+    /// * `three` - Analog Input 3 instance
     pub fn new(one: AnalogInput, two: AnalogInput, three: AnalogInput) -> Self {
         AnalogInputs { one, two, three }
     }
 }
 
+/// Main interface for the Automation HAT family of boards.
+///
+/// This struct provides access to all features of the Automation HAT:
+/// - Relays for high-power switching
+/// - Digital inputs for reading 5V signals
+/// - Digital outputs for 5V control signals
+/// - Analog inputs for reading variable voltage levels
+/// - Optional display (only on Automation HAT Mini)
 pub struct AutomationHAT {
+    /// The type of Automation HAT hardware being used
     pub hat_type: HatType,
+    /// Access to relay controls
     pub relays: Relays,
+    /// Access to digital input controls
     pub inputs: Inputs,
+    /// Access to digital output controls
     pub outputs: Outputs,
+    /// Access to analog input controls
     pub analog_inputs: AnalogInputs,
+    /// Access to the ST7735 display (only available on Automation HAT Mini)
     pub display: Option<ST7735<SpidevDevice, CdevPin, CdevPin>>,
 }
 
 impl AutomationHAT {
+    /// Creates a new AutomationHAT instance for the specified HAT type.
+    ///
+    /// This initializes all hardware connections, GPIO pins, I2C devices, and
+    /// the display (if using the Automation HAT Mini).
+    ///
+    /// # Arguments
+    ///
+    /// * `hat_type` - The type of Automation HAT to initialize
+    ///
+    /// # Returns
+    ///
+    /// A fully configured `AutomationHAT` instance ready for use
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use automation_hat::{AutomationHAT, HatType};
+    ///
+    /// // Create a new AutomationHAT instance
+    /// let mut hat = AutomationHAT::new(HatType::AutomationHAT);
+    /// ```
     pub fn new(hat_type: HatType) -> Self {
         let i2c_analog = I2cdev::new("/dev/i2c-1").unwrap();
         let analog_driver = Arc::new(Mutex::new(Ads1x1x::new_ads1015(
