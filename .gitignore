@@ -24,3 +24,8 @@ packaging/*.xz
 .vscode/
 .tox
 .coverage
+
+
+# Added by cargo
+
+/target
