@@ -54,7 +54,7 @@ pub use digital_output::DigitalOutput;
 pub use lights::LED;
 pub use relay::Relay;
 
-use ads1x1x::{Ads1x1x, TargetAddr};
+use ads1x1x::{Ads1x1x, FullScaleRange, TargetAddr};
 use linux_embedded_hal::{
     CdevPin, I2cdev, SpidevDevice,
     gpio_cdev::{Chip, LineRequestFlags},
@@ -239,10 +239,16 @@ impl AutomationHAT {
     /// ```
     pub fn new(hat_type: HatType) -> Self {
         let i2c_analog = I2cdev::new("/dev/i2c-1").unwrap();
-        let analog_driver = Arc::new(Mutex::new(Ads1x1x::new_ads1015(
-            i2c_analog,
-            TargetAddr::default(),
-        )));
+        let mut analog_driver = Ads1x1x::new_ads1015(i2c_analog, TargetAddr::default());
+
+        analog_driver
+            .set_full_scale_range(FullScaleRange::Within2_048V)
+            .unwrap();
+
+        let analog_driver = match analog_driver.into_continuous() {
+            Ok(driver) => Arc::new(Mutex::new(driver)),
+            Err(_) => panic!("Failed to convert analog driver into continuous mode"),
+        };
 
         let mut gpio_chip = Chip::new("/dev/gpiochip0").unwrap();
 

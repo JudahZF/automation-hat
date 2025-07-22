@@ -21,7 +21,7 @@ use std::sync::{Arc, Mutex};
 /// Each input can have an associated LED that indicates the input level.
 pub struct AnalogInput {
     /// Reference to the ADS1015 ADC driver
-    driver: Arc<Mutex<Ads1x1x<I2cdev, Ads1015, Resolution12Bit, OneShot>>>,
+    driver: Arc<Mutex<Ads1x1x<I2cdev, Ads1015, Resolution12Bit, Continuous>>>,
     /// Optional LED indicator for this input
     led: Option<LED>,
     /// Channel number on the ADS1015 (0-3)
@@ -45,7 +45,7 @@ impl AnalogInput {
     ///
     /// A new `AnalogInput` instance with the specified channel and LED
     pub fn new(
-        driver: Arc<Mutex<Ads1x1x<I2cdev, Ads1015, Resolution12Bit, OneShot>>>,
+        driver: Arc<Mutex<Ads1x1x<I2cdev, Ads1015, Resolution12Bit, Continuous>>>,
         led: Option<LED>,
         channel: u8,
     ) -> Self {
@@ -69,35 +69,26 @@ impl AnalogInput {
     /// * `Ok(f64)` - The normalized input value between 0.0 and 1.0
     /// * `Err(String)` - If reading the input or updating the LED failed
     pub fn read(&mut self) -> Result<f64, String> {
-        let value = match self.channel {
-            0 => self
-                .driver
-                .lock()
-                .unwrap()
-                .read(channel::SingleA0)
-                .map_err(|_| "Failed to read value from channel 0".to_string()),
-            1 => self
-                .driver
-                .lock()
-                .unwrap()
-                .read(channel::SingleA1)
-                .map_err(|_| "Failed to read value from channel 1".to_string()),
-            2 => self
-                .driver
-                .lock()
-                .unwrap()
-                .read(channel::SingleA2)
-                .map_err(|_| "Failed to read value from channel 2".to_string()),
-            3 => self
-                .driver
-                .lock()
-                .unwrap()
-                .read(channel::SingleA3)
-                .map_err(|_| "Failed to read value from channel 3".to_string()),
+        let mut driver = self.driver.lock().unwrap();
+        match self.channel {
+            0 => driver
+                .select_channel(channel::SingleA0)
+                .map_err(|error| format!("Failed to read value from channel 0: {:?}", error)),
+            1 => driver
+                .select_channel(channel::SingleA1)
+                .map_err(|error| format!("Failed to read value from channel 1: {:?}", error)),
+            2 => driver
+                .select_channel(channel::SingleA2)
+                .map_err(|error| format!("Failed to read value from channel 2: {:?}", error)),
+            3 => driver
+                .select_channel(channel::SingleA3)
+                .map_err(|error| format!("Failed to read value from channel 3: {:?}", error)),
             _ => return Err("Invalid channel".to_string()),
         }?;
 
-        self.value = value as f64 / self.max_value;
+        let value = driver.read().unwrap();
+
+        self.value = ((value as f64 / 10.0) * 2.048) / self.max_value;
 
         if self.led.is_some() {
             // Update LED brightness based on analog value
