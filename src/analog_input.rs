@@ -8,7 +8,7 @@ use crate::lights::LED;
 use ads1x1x::{
     Ads1x1x, channel,
     ic::{Ads1015, Resolution12Bit},
-    mode::OneShot,
+    mode::Continuous,
 };
 use linux_embedded_hal::I2cdev;
 use std::sync::{Arc, Mutex};
