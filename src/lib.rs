@@ -63,9 +63,9 @@ use sn3218_hal::SN3218;
 use st7735_lcd::ST7735;
 use std::sync::{Arc, Mutex};
 
-static RELAY_3: u32 = 13;
+static RELAY_1: u32 = 13;
 static RELAY_2: u32 = 19;
-static RELAY_1: u32 = 16;
+static RELAY_3: u32 = 16;
 
 static INPUT_1: u32 = 26;
 static INPUT_2: u32 = 20;
