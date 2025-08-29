@@ -97,9 +97,9 @@ pub enum HatType {
 /// - `three` is available on all HAT variants
 pub struct Relays {
     /// Relay 1 - Only present on full HAT
-    pub one: Option<Relay>,
+    pub one: Relay,
     /// Relay 2 - Only present on full HAT
-    pub two: Option<Relay>,
+    pub two: Relay,
     /// Relay 3 - Present on all HAT variants
     pub three: Relay,
 }
@@ -109,10 +109,10 @@ impl Relays {
     ///
     /// # Arguments
     ///
-    /// * `one` - Optional Relay 1 instance (present on HAT)
-    /// * `two` - Optional Relay 2 instance (present on HAT)
+    /// * `one` - Relay 1 instance (present on HAT)
+    /// * `two` - Relay 2 instance (present on HAT)
     /// * `three` - Relay 3 instance (present on all variants)
-    pub fn new(one: Option<Relay>, two: Option<Relay>, three: Relay) -> Self {
+    pub fn new(one: Relay, two: Relay, three: Relay) -> Self {
         Relays { one, two, three }
     }
 }
@@ -255,9 +255,10 @@ impl AutomationHAT {
         // For AutomationHATMini, disable auto-lighting since there are no LEDs
         let auto_light = !matches!(hat_type, HatType::AutomationHATMini);
 
-        let mut relay_1 = None;
-        let mut relay_2 = None;
-
+        let mut relay_1_no_led = None;
+        let mut relay_1_nc_led = None;
+        let mut relay_2_no_led = None;
+        let mut relay_2_nc_led = None;
         let mut relay_3_no_led = None;
         let mut relay_3_nc_led = None;
         let mut input_1_led = None;
@@ -288,26 +289,12 @@ impl AutomationHAT {
                 input_2_led = Some(LED::new(driver.clone(), 13));
                 input_3_led = Some(LED::new(driver.clone(), 12));
 
-                let relay_1_no_led = Some(LED::new(driver.clone(), 6));
-                let relay_1_nc_led = Some(LED::new(driver.clone(), 7));
-                let relay_2_no_led = Some(LED::new(driver.clone(), 8));
-                let relay_2_nc_led = Some(LED::new(driver.clone(), 9));
+                relay_1_no_led = Some(LED::new(driver.clone(), 6));
+                relay_1_nc_led = Some(LED::new(driver.clone(), 7));
+                relay_2_no_led = Some(LED::new(driver.clone(), 8));
+                relay_2_nc_led = Some(LED::new(driver.clone(), 9));
                 relay_3_no_led = Some(LED::new(driver.clone(), 10));
                 relay_3_nc_led = Some(LED::new(driver.clone(), 11));
-
-                relay_1 = Some(Relay::new_with_auto_light(
-                    gpio_chip.get_line(RELAY_1).unwrap(),
-                    relay_1_no_led,
-                    relay_1_nc_led,
-                    auto_light,
-                ));
-
-                relay_2 = Some(Relay::new_with_auto_light(
-                    gpio_chip.get_line(RELAY_2).unwrap(),
-                    relay_2_no_led,
-                    relay_2_nc_led,
-                    auto_light,
-                ));
             }
             HatType::AutomationPHAT => {}
             HatType::AutomationHATMini => {
@@ -339,6 +326,20 @@ impl AutomationHAT {
                 }
             }
         }
+
+        let relay_1 = Relay::new_with_auto_light(
+            gpio_chip.get_line(RELAY_1).unwrap(),
+            relay_1_no_led,
+            relay_1_nc_led,
+            auto_light,
+        );
+
+        let relay_2 = Relay::new_with_auto_light(
+            gpio_chip.get_line(RELAY_2).unwrap(),
+            relay_2_no_led,
+            relay_2_nc_led,
+            auto_light,
+        );
 
         let relay_3 = Relay::new_with_auto_light(
             gpio_chip.get_line(RELAY_3).unwrap(),
